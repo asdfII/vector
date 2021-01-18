@@ -202,7 +202,7 @@ mod tests {
 
         let metric = super::capture_metrics(super::get_controller().unwrap())
             .map(|e| e.into_metric())
-            .find(|metric| metric.name == "labels_injected_total")
+            .find(|metric| metric.name() == "labels_injected_total")
             .unwrap();
 
         let expected_tags = Some(
@@ -215,7 +215,7 @@ mod tests {
             .collect(),
         );
 
-        assert_eq!(metric.tags, expected_tags);
+        assert_eq!(metric.tags(), expected_tags.as_ref());
     }
 
     #[test]
@@ -226,9 +226,9 @@ mod tests {
         let capture_value = || {
             let metric = super::capture_metrics(super::get_controller().unwrap())
                 .map(|e| e.into_metric())
-                .find(|metric| metric.name == super::CARDINALITY_KEY_NAME)
+                .find(|metric| metric.name() == super::CARDINALITY_KEY_NAME)
                 .unwrap();
-            match metric.value {
+            match metric.data.value {
                 crate::event::MetricValue::Counter { value } => value,
                 _ => panic!("invalid metric value type, expected coutner, got something else"),
             }
