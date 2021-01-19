@@ -22,7 +22,7 @@ pub struct Metric {
 pub struct MetricSeries {
     #[serde(flatten)]
     pub name: MetricName,
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<MetricTags>,
 }
 
