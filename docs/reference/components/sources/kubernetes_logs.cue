@@ -170,8 +170,8 @@ components: sources: kubernetes_logs: {
 				"""
 			required: false
 			type: array: {
-				default: []
-				items: type: string: examples: ["metadata.name!=pod-name-to-exclude"]
+				default: ""
+				items: type: string: examples: "metadata.name!=pod-name-to-exclude,metadata.name=mypod"
 			}
 		}
 		extra_label_selector: {
@@ -182,8 +182,8 @@ components: sources: kubernetes_logs: {
 				"""
 			required: false
 			type: array: {
-				default: []
-				items: type: string: examples: ["my_custom_label!=my_value"]
+				default: ""
+				items: type: string: examples: "my_custom_label!=my_value,my_other_custom_label=my_value"
 			}
 		}
 	}
