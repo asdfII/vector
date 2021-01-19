@@ -207,7 +207,7 @@ mod test {
             MetricValue::Counter { value: 100.0 },
         ));
         assert_eq!(
-            r#"{"name":"foos","namespace":"vector","timestamp":"2018-11-14T08:09:10.000000011Z","tags":{"Key3":"Value3","key1":"value1","key2":"value2"},"kind":"incremental","counter":{"value":100.0}}"#,
+            r#"{"name":"foos","namespace":"vector","tags":{"Key3":"Value3","key1":"value1","key2":"value2"},"timestamp":"2018-11-14T08:09:10.000000011Z","kind":"incremental","counter":{"value":100.0}}"#,
             encode_event(event, &EncodingConfig::from(Encoding::Json)).unwrap()
         );
     }
