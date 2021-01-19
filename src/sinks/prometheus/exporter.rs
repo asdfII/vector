@@ -321,6 +321,7 @@ impl StreamSink for PrometheusExporter {
                 }
                 MetricKind::Absolute => {
                     let new = MetricEntry(item);
+                    metrics.map.remove(&new);
                     metrics.map.insert(new, false);
                 }
             };
@@ -335,7 +336,7 @@ impl StreamSink for PrometheusExporter {
 mod tests {
     use super::*;
     use crate::{
-        event::{Metric, MetricValue},
+        event::metric::{Metric, MetricData, MetricSeries, MetricValue},
         http::HttpClient,
         test_util::{random_string, trace_init},
         tls::MaybeTlsSettings,
@@ -414,6 +415,83 @@ mod tests {
         )
         .into();
         (name, event)
+    }
+
+    #[tokio::test]
+    async fn sink_absolute() {
+        let config = PrometheusExporterConfig {
+            address: PROMETHEUS_ADDRESS_TLS.parse().unwrap(),
+            tls: None,
+            ..Default::default()
+        };
+        let cx = SinkContext::new_test();
+
+        let mut sink = PrometheusExporter::new(config, cx.acker());
+
+        let m1 = Metric::new(
+            "absolute".to_string(),
+            None,
+            None,
+            Some(
+                vec![("tag1".to_owned(), "value1".to_owned())]
+                    .into_iter()
+                    .collect(),
+            ),
+            MetricKind::Absolute,
+            MetricValue::Counter { value: 32. },
+        );
+
+        let m2 = Metric {
+            series: MetricSeries {
+                tags: Some(
+                    vec![("tag1".to_owned(), "value2".to_owned())]
+                        .into_iter()
+                        .collect(),
+                ),
+                ..m1.series.clone()
+            },
+            data: m1.data.clone(),
+        };
+
+        let metrics = vec![
+            Event::Metric(Metric {
+                series: m1.series.clone(),
+                data: MetricData {
+                    value: MetricValue::Counter { value: 32. },
+                    ..m1.data.clone()
+                },
+            }),
+            Event::Metric(Metric {
+                series: m2.series.clone(),
+                data: MetricData {
+                    value: MetricValue::Counter { value: 33. },
+                    ..m2.data.clone()
+                },
+            }),
+            Event::Metric(Metric {
+                series: m1.series.clone(),
+                data: MetricData {
+                    value: MetricValue::Counter { value: 40. },
+                    ..m1.data.clone()
+                },
+            }),
+        ];
+
+        sink.run(Box::pin(futures::stream::iter(metrics)))
+            .await
+            .unwrap();
+
+        let map = &sink.metrics.read().unwrap().map;
+
+        assert_eq!(
+            map.get_full(&MetricEntry(m1)).unwrap().1 .0.data.value,
+            MetricValue::Counter { value: 40. }
+        );
+
+        assert_eq!(
+            map.get_full(&MetricEntry(m2)).unwrap().1 .0.data.value,
+            MetricValue::Counter { value: 33. }
+        );
     }
 }
 
